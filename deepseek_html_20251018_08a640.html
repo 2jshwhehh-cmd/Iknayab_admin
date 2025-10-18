@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - STORE</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Admin Navigation */
+        .admin-navbar {
+            background: #fff;
+            border-bottom: 1px solid #e5e5e5;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 0 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background-color: #000;
+            color: #fff;
+        }
+
+        /* Main Content */
+        .admin-main {
+            padding: 2rem 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .admin-section {
+            display: none;
+        }
+
+        .admin-section.active {
+            display: block;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 2rem;
+            color: #000;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: #000;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #333;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        /* Dashboard Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #e5e5e5;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .stat-icon {
+            font-size: 3rem;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .stat-info h3 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-info p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        /* Recent Activity */
+        .recent-activity {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #e5e5e5;
+        }
+
+        .recent-activity h2 {
+            margin-bottom: 1.5rem;
+            color: #000;
+            font-size: 1.5rem;
+        }
+
+        .orders-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .order-item:hover {
+            background: #f8f9fa;
+        }
+
+        .order-info h4 {
+            color: #000;
+            margin-bottom: 0.25rem;
+        }
+
+        .order-info p {
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        .order-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-confirmed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-shipped {
+            background: #d1e7ff;
+            color: #004085;
+        }
+
+        .status-delivered {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Tables */
+        .products-table-container,
+        .orders-table-container {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e5e5e5;
+            overflow: hidden;
+        }
+
+        .products-table,
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .products-table th,
+        .orders-table th {
+            background: #f8f9fa;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #000;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .products-table td,
+        .orders-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .products-table tr:last-child td,
+        .orders-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .products-table tr:hover,
+        .orders-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Product Image in Table */
+        .product-image-small {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .filters select,
+        .filters input {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .filters input {
+            flex: 1;
+            max-width: 300px;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .large-modal {
+            max-width: 800px;
+        }
+
+        .confirm-modal {
+            max-width: 400px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .modal-header h3 {
+            color: #000;
+            font-size: 1.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .close-btn:hover {
+            color: #000;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        /* Forms */
+        .product-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #000;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        /* Image Upload Section */
+        .image-upload-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .upload-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .image-count {
+            color: #666;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .upload-status {
+            font-size: 0.875rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+        }
+
+        .upload-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .upload-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .upload-status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .upload-status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        /* Multiple Images Preview */
+        .multiple-images-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .multiple-image-item {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #e5e5e5;
+            background: #f8f9fa;
+            transition: all 0.2s ease;
+        }
+
+        .multiple-image-item:hover {
+            border-color: #000;
+            transform: translateY(-2px);
+        }
+
+        .multiple-image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .remove-image {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.9;
+            transition: opacity 0.2s;
+        }
+
+        .remove-image:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .image-position {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .main-image-badge {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: #000;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .set-main-image {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0.9;
+            transition: opacity 0.2s;
+        }
+
+        .set-main-image:hover {
+            opacity: 1;
+        }
+
+        .no-image {
+            color: #666;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        /* Products Table with Multiple Images */
+        .products-table .product-images-small {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .product-images-small img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+
+        .more-images {
+            width: 40px;
+            height: 40px;
+            background: #f8f9fa;
+            border: 1px dashed #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #666;
+            font-weight: bold;
+        }
+
+        /* Loading States */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .empty-state p {
+            margin-bottom: 1rem;
+        }
+
+        /* Order Details */
+        .order-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .order-customer-info,
+        .order-product-info {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+
+        .order-customer-info h4,
+        .order-product-info h4 {
+            margin-bottom: 1rem;
+            color: #000;
+        }
+
+        .order-customer-info p,
+        .order-product-info p {
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        .order-status-control {
+            margin-top: 1.5rem;
+        }
+
+        .order-status-control label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                height: auto;
+                padding: 1rem 0;
+                gap: 1rem;
+            }
+            
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .products-table-container,
+            .orders-table-container {
+                overflow-x: auto;
+            }
+            
+            .order-details-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filters input {
+                max-width: none;
+            }
+            
+            .multiple-images-preview {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+            
+            .multiple-image-item {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .upload-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .admin-main {
+                padding: 1rem 0.5rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .modal {
+                margin: 0.5rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .multiple-images-preview {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            }
+            
+            .multiple-image-item {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .products-table .product-images-small img {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .more-images {
+                width: 30px;
+                height: 30px;
+                font-size: 10px;
+            }
+        }
+
+        /* Offline Warning */
+        #offline-warning {
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            background: #ff9800;
+            color: white;
+            padding: 12px;
+            text-align: center;
+            z-index: 1000;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .offline-indicator {
+            background: #ff9800;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Navigation -->
+    <nav class="admin-navbar">
+        <div class="nav-container">
+            <div class="nav-logo">STORE Admin</div>
+            <div class="nav-links">
+                <button class="nav-link active" onclick="showSection('dashboard')">Dashboard</button>
+                <button class="nav-link" onclick="showSection('products')">Products</button>
+                <button class="nav-link" onclick="showSection('orders')">Orders</button>
+                <button class="nav-link" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <!-- Dashboard Section -->
+        <section id="dashboard-section" class="admin-section active">
+            <div class="container">
+                <h1 class="section-title">Dashboard</h1>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-info">
+                            <h3 id="total-products">0</h3>
+                            <p>Total Products</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">🛒</div>
+                        <div class="stat-info">
+                            <h3 id="total-orders">0</h3>
+                            <p>Total Orders</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">⏳</div>
+                        <div class="stat-info">
+                            <h3 id="pending-orders">0</h3>
+                            <p>Pending Orders</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-info">
+                            <h3 id="revenue">Rs. 0</h3>
+                            <p>Total Revenue</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h2>Recent Orders</h2>
+                    <div id="recent-orders-list" class="orders-list">
+                        <!-- Recent orders will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Products Management Section -->
+        <section id="products-section" class="admin-section">
+            <div class="container">
+                <div class="section-header">
+                    <h1 class="section-title">Product Management</h1>
+                    <button class="btn-primary" onclick="openProductModal()">
+                        + Add New Product
+                    </button>
+                </div>
+
+                <div class="products-table-container">
+                    <table class="products-table">
+                        <thead>
+                            <tr>
+                                <th>Images</th>
+                                <th>Name</th>
+                                <th>Price</th>
+                                <th>Category</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-table-body">
+                            <!-- Products will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Orders Management Section -->
+        <section id="orders-section" class="admin-section">
+            <div class="container">
+                <h1 class="section-title">Order Management</h1>
+                
+                <div class="filters">
+                    <select id="status-filter" onchange="filterOrders()">
+                        <option value="all">All Orders</option>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    
+                    <input type="text" id="search-orders" placeholder="Search by customer name or phone..." onkeyup="searchOrders()">
+                </div>
+
+                <div class="orders-table-container">
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-table-body">
+                            <!-- Orders will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="modal-overlay" style="display: none;">
+        <div class="modal large-modal">
+            <div class="modal-header">
+                <h3 id="product-modal-title">Add New Product</h3>
+                <button class="close-btn" onclick="closeProductModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="product-form" class="product-form">
+                    <input type="hidden" id="product-id">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Product Name *</label>
+                            <input type="text" id="product-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Price (Rs.) *</label>
+                            <input type="number" id="product-price" required min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Category *</label>
+                            <select id="product-category" required>
+                                <option value="">Select Category</option>
+                                <option value="electronics">Electronics</option>
+                                <option value="fashion">Fashion</option>
+                                <option value="home">Home & Kitchen</option>
+                                <option value="sports">Sports</option>
+                                <option value="books">Books</option>
+                                <option value="beauty">Beauty</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Stock Status</label>
+                            <select id="product-stock">
+                                <option value="true">In Stock</option>
+                                <option value="false">Out of Stock</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Multiple Images Upload Section -->
+                    <div class="form-group">
+                        <label>Product Images (Up to 4) *</label>
+                        <div class="image-upload-section">
+                            <div class="upload-controls">
+                                <button type="button" class="btn-secondary" onclick="openCloudinaryWidget()">
+                                    📷 Add Images (4 remaining)
+                                </button>
+                                <span class="image-count" id="image-count">0 images selected</span>
+                            </div>
+                            
+                            <div id="multiple-images-preview" class="multiple-images-preview">
+                                <!-- Multiple images will be previewed here -->
+                            </div>
+                            
+                            <input type="hidden" id="product-images">
+                            <div id="image-upload-status" class="upload-status"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Description *</label>
+                        <textarea id="product-description" required rows="4" placeholder="Enter product description..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="closeProductModal()">Cancel</button>
+                        <button type="submit" class="btn-primary">Save Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div id="order-modal" class="modal-overlay" style="display: none;">
+        <div class="modal large-modal">
+            <div class="modal-header">
+                <h3>Order Details</h3>
+                <button class="close-btn" onclick="closeOrderModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="order-details-content">
+                    <!-- Order details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal-overlay" style="display: none;">
+        <div class="modal confirm-modal">
+            <div class="modal-body">
+                <h4 id="confirm-message">Are you sure you want to delete this product?</h4>
+                <div class="confirm-actions">
+                    <button class="btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+                    <button class="btn-danger" id="confirm-action-btn">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD1lz-Veg827jy81VCj7W6ExcFMIfd_Y3Q",
+            authDomain: "freefire-tournaments-f4681.firebaseapp.com",
+            databaseURL: "https://freefire-tournaments-f4681-default-rtdb.firebaseio.com",
+            projectId: "freefire-tournaments-f4681",
+            storageBucket: "freefire-tournaments-f4681.firebasestorage.app",
+            messagingSenderId: "863000976606",
+            appId: "1:863000976606:web:7924226bb4b9efdd66764f"
+        };
+
+        // Initialize Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+        } catch (error) {
+            console.log('Firebase already initialized:', error.message);
+        }
+
+        const db = firebase.firestore();
+
+        // Cloudinary Configuration
+        const cloudinaryConfig = {
+            cloudName: 'freefire-tournaments-f4681',
+            uploadPreset: 'unsigned_product_upload',
+            folder: 'products_admin',
+            sources: ['local', 'camera', 'url'],
+            multiple: true,
+            maxFiles: 4,
+            clientAllowedFormats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+            maxFileSize: 5000000,
+            showAdvancedOptions: false,
+            cropping: false
+        };
+
+        // Global variables
+        let products = [];
+        let orders = [];
+        let currentEditingProduct = null;
+        let pendingAction = null;
+        let cloudinaryWidget = null;
+        let productImages = [];
+        let isOnline = navigator.onLine;
+
+        // Initialize admin panel
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeAdminPanel();
+            initializeCloudinaryWidget();
+        });
+
+        // Initialize Cloudinary Upload Widget
+        function initializeCloudinaryWidget() {
+            try {
+                cloudinaryWidget = cloudinary.createUploadWidget(
+                    cloudinaryConfig,
+                    (error, result) => {
+                        if (!error && result && result.event === "success") {
+                            handleCloudinaryUpload(result);
+                        } else if (error) {
+                            console.error('Cloudinary upload error:', error);
+                            handleCloudinaryError(error);
+                        }
+                    }
+                );
+                console.log('Cloudinary widget initialized');
+            } catch (error) {
+                console.error('Error initializing Cloudinary widget:', error);
+            }
+        }
+
+        // Handle Cloudinary upload success
+        function handleCloudinaryUpload(result) {
+            const imageUrl = result.info.secure_url;
+            const thumbnailUrl = result.info.thumbnail_url || imageUrl;
+            
+            if (productImages.length < 4) {
+                productImages.push({
+                    url: imageUrl,
+                    thumbnail: thumbnailUrl,
+                    isMain: productImages.length === 0
+                });
+                
+                updateImagesPreview();
+                updateImageCount();
+                
+                const statusDiv = document.getElementById('image-upload-status');
+                statusDiv.innerHTML = `
+                    <div class="upload-status success">
+                        ✅ Image uploaded successfully! (${productImages.length}/4)
+                    </div>
+                `;
+            } else {
+                const statusDiv = document.getElementById('image-upload-status');
+                statusDiv.innerHTML = `
+                    <div class="upload-status warning">
+                        ⚠️ Maximum 4 images reached. Remove some images to add more.
+                    </div>
+                `;
+            }
+        }
+
+        // Handle Cloudinary upload error
+        function handleCloudinaryError(error) {
+            console.error('Cloudinary upload error:', error);
+            const statusDiv = document.getElementById('image-upload-status');
+            
+            statusDiv.innerHTML = `
+                <div class="upload-status error">
+                    ❌ Upload failed. Please try again.
+                </div>
+            `;
+        }
+
+        // Open Cloudinary widget
+        function openCloudinaryWidget() {
+            if (!cloudinaryWidget) {
+                alert('Cloudinary widget not initialized. Please refresh the page.');
+                return;
+            }
+            
+            const remainingSlots = getRemainingImageSlots();
+            if (remainingSlots === 0) {
+                alert('Maximum 4 images reached. Please remove some images before adding more.');
+                return;
+            }
+            
+            const statusDiv = document.getElementById('image-upload-status');
+            statusDiv.innerHTML = `
+                <div class="upload-status info">
+                    ⏳ Opening upload dialog... (You can select up to ${remainingSlots} images)
+                </div>
+            `;
+            
+            cloudinaryWidget.open();
+        }
+
+        // Update images preview
+        function updateImagesPreview() {
+            const previewContainer = document.getElementById('multiple-images-preview');
+            
+            if (productImages.length === 0) {
+                previewContainer.innerHTML = '<div class="no-image">No images selected</div>';
+                return;
+            }
+            
+            previewContainer.innerHTML = productImages.map((image, index) => `
+                <div class="multiple-image-item">
+                    <img src="${image.thumbnail}" alt="Product image ${index + 1}">
+                    <span class="image-position">${index + 1}</span>
+                    ${image.isMain ? '<span class="main-image-badge">Main</span>' : ''}
+                    <button class="set-main-image" onclick="setAsMainImage(${index})" 
+                            ${image.isMain ? 'style="display: none;"' : ''}>
+                        Set Main
+                    </button>
+                    <button class="remove-image" onclick="removeImage(${index})">&times;</button>
+                </div>
+            `).join('');
+        }
+
+        // Remove image from the array
+        function removeImage(index) {
+            const wasMain = productImages[index].isMain;
+            productImages.splice(index, 1);
+            
+            if (wasMain && productImages.length > 0) {
+                productImages[0].isMain = true;
+            }
+            
+            updateImagesPreview();
+            updateImageCount();
+            
+            const statusDiv = document.getElementById('image-upload-status');
+            statusDiv.innerHTML = `
+                <div class="upload-status info">
+                    ℹ️ Image removed. (${productImages.length}/4 images)
+                </div>
+            `;
+        }
+
+        // Set image as main
+        function setAsMainImage(index) {
+            productImages.forEach(image => image.isMain = false);
+            productImages[index].isMain = true;
+            
+            updateImagesPreview();
+            
+            const statusDiv = document.getElementById('image-upload-status');
+            statusDiv.innerHTML = `
+                <div class="upload-status success">
+                    ✅ Image ${index + 1} set as main display image
+                </div>
+            `;
+        }
+
+        // Update image count display
+        function updateImageCount() {
+            const countElement = document.getElementById('image-count');
+            const uploadButton = document.querySelector('.upload-controls .btn-secondary');
+            const remainingSlots = getRemainingImageSlots();
+            
+            if (countElement) {
+                countElement.textContent = `${productImages.length}/4 images selected`;
+            }
+            
+            if (uploadButton) {
+                uploadButton.textContent = `📷 Add Images (${remainingSlots}/4 remaining)`;
+                uploadButton.disabled = remainingSlots === 0;
+            }
+        }
+
+        // Get remaining image slots
+        function getRemainingImageSlots() {
+            return 4 - productImages.length;
+        }
+
+        // Initialize admin panel
+        async function initializeAdminPanel() {
+            try {
+                await Promise.all([
+                    loadProducts(),
+                    loadOrders()
+                ]);
+                updateDashboardStats();
+                setupEventListeners();
+                
+                console.log('Admin panel initialized successfully');
+            } catch (error) {
+                console.error('Error initializing admin panel:', error);
+            }
+        }
+
+        // Load products from Firebase
+        async function loadProducts() {
+            try {
+                showLoading('products-table-body', 'Loading products...');
+                
+                const snapshot = await db.collection('products').orderBy('name').get();
+                products = [];
+                
+                snapshot.forEach(doc => {
+                    const productData = doc.data();
+                    products.push({
+                        id: doc.id,
+                        ...productData
+                    });
+                });
+                
+                displayProducts();
+                console.log(`Loaded ${products.length} products`);
+            } catch (error) {
+                console.error('Error loading products:', error);
+                showError('products-table-body', 'Failed to load products.');
+            }
+        }
+
+        // Display products in table
+        function displayProducts() {
+            const tbody = document.getElementById('products-table-body');
+            if (!tbody) return;
+            
+            if (products.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <p>No products found.</p>
+                            <button class="btn-primary" onclick="openProductModal()">Add Your First Product</button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = products.map(product => {
+                const images = product.images || [];
+                const displayImages = images.slice(0, 3);
+                
+                return `
+                    <tr>
+                        <td>
+                            <div class="product-images-small">
+                                ${displayImages.length > 0 ? 
+                                    displayImages.map((image, idx) => `
+                                        <img src="${image.thumbnail || image.url}" 
+                                             alt="${product.name} ${idx + 1}"
+                                             title="${image.isMain ? 'Main Image' : 'Image ' + (idx + 1)}">
+                                    `).join('') : 
+                                    `<img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100" alt="No image">`
+                                }
+                                ${images.length > 3 ? 
+                                    `<div class="more-images" title="${images.length - 3} more images">+${images.length - 3}</div>` : 
+                                    ''
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            <strong>${product.name}</strong>
+                            <br>
+                            <small style="color: #666;">${product.description ? product.description.substring(0, 50) + '...' : 'No description'}</small>
+                        </td>
+                        <td>Rs. ${(product.price || 0).toLocaleString()}</td>
+                        <td>${product.category || 'Uncategorized'}</td>
+                        <td>
+                            <span class="order-status ${product.inStock === false ? 'status-cancelled' : 'status-delivered'}">
+                                ${product.inStock === false ? 'Out of Stock' : 'In Stock'}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-primary btn-sm" onclick="editProduct('${product.id}')">Edit</button>
+                                <button class="btn-danger btn-sm" onclick="confirmDeleteProduct('${product.id}')">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Handle product form submission
+        document.getElementById('product-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            // Basic validation
+            const productName = document.getElementById('product-name').value.trim();
+            const productPrice = document.getElementById('product-price').value;
+            const productCategory = document.getElementById('product-category').value;
+            const productDescription = document.getElementById('product-description').value.trim();
+            
+            if (!productName) {
+                alert('Please enter a product name.');
+                return;
+            }
+            
+            if (!productPrice || parseFloat(productPrice) <= 0) {
+                alert('Please enter a valid price.');
+                return;
+            }
+            
+            if (!productCategory) {
+                alert('Please select a category.');
+                return;
+            }
+            
+            if (!productDescription) {
+                alert('Please enter a product description.');
+                return;
+            }
+            
+            if (productImages.length === 0) {
+                alert('Please upload at least one product image.');
+                return;
+            }
+            
+            const productData = {
+                name: productName,
+                price: parseFloat(productPrice),
+                category: productCategory,
+                images: productImages,
+                description: productDescription,
+                inStock: document.getElementById('product-stock').value === 'true',
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            try {
+                const productId = document.getElementById('product-id').value;
+                
+                if (productId) {
+                    // Update existing product
+                    await db.collection('products').doc(productId).update(productData);
+                    alert('Product updated successfully!');
+                } else {
+                    // Add new product
+                    productData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    await db.collection('products').add(productData);
+                    alert('Product added successfully!');
+                }
+                
+                closeProductModal();
+                await loadProducts();
+                updateDashboardStats();
+                
+            } catch (error) {
+                console.error('Error saving product:', error);
+                alert('Error saving product. Please try again.');
+            }
+        });
+
+        // Product Modal Functions
+        function openProductModal(productId = null) {
+            const modal = document.getElementById('product-modal');
+            const title = document.getElementById('product-modal-title');
+            
+            // Reset images array
+            productImages = [];
+            
+            if (productId) {
+                // Edit mode
+                title.textContent = 'Edit Product';
+                currentEditingProduct = products.find(p => p.id === productId);
+                if (currentEditingProduct) {
+                    populateProductForm(currentEditingProduct);
+                }
+            } else {
+                // Add mode
+                title.textContent = 'Add New Product';
+                currentEditingProduct = null;
+                document.getElementById('product-form').reset();
+                document.getElementById('product-id').value = '';
+            }
+            
+            updateImagesPreview();
+            updateImageCount();
+            modal.style.display = 'flex';
+        }
+
+        function closeProductModal() {
+            document.getElementById('product-modal').style.display = 'none';
+            currentEditingProduct = null;
+            document.getElementById('product-form').reset();
+            productImages = [];
+            updateImagesPreview();
+            updateImageCount();
+        }
+
+        function populateProductForm(product) {
+            document.getElementById('product-id').value = product.id;
+            document.getElementById('product-name').value = product.name;
+            document.getElementById('product-price').value = product.price;
+            document.getElementById('product-category').value = product.category || '';
+            document.getElementById('product-description').value = product.description || '';
+            document.getElementById('product-stock').value = product.inStock === false ? 'false' : 'true';
+            
+            // Set images if exist
+            if (product.images && product.images.length > 0) {
+                productImages = [...product.images];
+                updateImagesPreview();
+                updateImageCount();
+            }
+        }
+
+        // Edit product
+        function editProduct(productId) {
+            openProductModal(productId);
+        }
+
+        // Confirm and delete product
+        function confirmDeleteProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            const modal = document.getElementById('confirm-modal');
+            const message = document.getElementById('confirm-message');
+            const confirmBtn = document.getElementById('confirm-action-btn');
+            
+            message.textContent = `Are you sure you want to delete "${product.name}"? This action cannot be undone.`;
+            
+            confirmBtn.onclick = () => deleteProduct(productId);
+            
+            modal.style.display = 'flex';
+            pendingAction = 'delete';
+        }
+
+        async function deleteProduct(productId) {
+            try {
+                await db.collection('products').doc(productId).delete();
+                alert('Product deleted successfully!');
+                closeConfirmModal();
+                await loadProducts();
+                updateDashboardStats();
+            } catch (error) {
+                console.error('Error deleting product:', error);
+                alert('Error deleting product. Please try again.');
+            }
+        }
+
+        // Load orders from Firebase
+        async function loadOrders() {
+            try {
+                showLoading('orders-table-body', 'Loading orders...');
+                
+                const snapshot = await db.collection('orders').orderBy('createdAt', 'desc').get();
+                orders = [];
+                
+                snapshot.forEach(doc => {
+                    orders.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                displayOrders();
+                updateDashboardStats();
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                showError('orders-table-body', 'Failed to load orders.');
+            }
+        }
+
+        // Display orders in table
+        function displayOrders(filteredOrders = null) {
+            const tbody = document.getElementById('orders-table-body');
+            const ordersToDisplay = filteredOrders || orders;
+            
+            if (!tbody) return;
+            
+            if (ordersToDisplay.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="empty-state">
+                            <p>No orders found.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = ordersToDisplay.map(order => {
+                const orderDate = order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
+                
+                return `
+                    <tr>
+                        <td><strong>#${order.id.substring(0, 8)}</strong></td>
+                        <td>
+                            <strong>${order.customer.name}</strong><br>
+                            <small>${order.customer.phone}</small><br>
+                            <small>${order.customer.city}</small>
+                        </td>
+                        <td>
+                            <strong>${order.product.name}</strong><br>
+                            <small>Rs. ${order.product.price}</small>
+                        </td>
+                        <td>${order.quantity || 1}</td>
+                        <td><strong>Rs. ${(order.total || 0).toLocaleString()}</strong></td>
+                        <td>
+                            <span class="order-status ${order.paymentMethod === 'easypaisa' ? 'status-confirmed' : 'status-pending'}">
+                                ${order.paymentMethod === 'easypaisa' ? 'Easypaisa' : 'COD'}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="order-status status-${order.status || 'pending'}">
+                                ${(order.status || 'pending').charAt(0).toUpperCase() + (order.status || 'pending').slice(1)}
+                            </span>
+                        </td>
+                        <td>${orderDate}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-primary btn-sm" onclick="viewOrderDetails('${order.id}')">View</button>
+                                <button class="btn-secondary btn-sm" onclick="updateOrderStatus('${order.id}')">Update</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Update dashboard statistics
+        function updateDashboardStats() {
+            document.getElementById('total-products').textContent = products.length;
+            document.getElementById('total-orders').textContent = orders.length;
+            document.getElementById('pending-orders').textContent = orders.filter(order => order.status === 'pending').length;
+            
+            const revenue = orders.reduce((total, order) => total + (order.total || 0), 0);
+            document.getElementById('revenue').textContent = `Rs. ${revenue.toLocaleString()}`;
+            
+            updateRecentOrders();
+        }
+
+        // Update recent orders in dashboard
+        function updateRecentOrders() {
+            const recentOrdersList = document.getElementById('recent-orders-list');
+            if (!recentOrdersList) return;
+            
+            const recentOrders = orders.slice(0, 5);
+            
+            if (recentOrders.length === 0) {
+                recentOrdersList.innerHTML = '<p class="empty-state">No recent orders</p>';
+                return;
+            }
+            
+            recentOrdersList.innerHTML = recentOrders.map(order => `
+                <div class="order-item">
+                    <div class="order-info">
+                        <h4>${order.customer.name}</h4>
+                        <p>${order.product.name} × ${order.quantity || 1} - Rs. ${order.total || 0}</p>
+                    </div>
+                    <span class="order-status status-${order.status || 'pending'}">
+                        ${(order.status || 'pending').charAt(0).toUpperCase() + (order.status || 'pending').slice(1)}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        // Navigation between sections
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.admin-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Show target section
+            const targetSection = document.getElementById(`${sectionName}-section`);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+            
+            // Add active class to clicked nav link
+            event.target.classList.add('active');
+            
+            // Refresh data if needed
+            if (sectionName === 'dashboard') {
+                updateDashboardStats();
+            }
+        }
+
+        // Order Management Functions
+        function viewOrderDetails(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+            
+            const modal = document.getElementById('order-modal');
+            const content = document.getElementById('order-details-content');
+            
+            const orderDate = order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleString() : 'N/A';
+            
+            content.innerHTML = `
+                <div class="order-details-grid">
+                    <div class="order-customer-info">
+                        <h4>Customer Information</h4>
+                        <p><strong>Name:</strong> ${order.customer.name}</p>
+                        <p><strong>Phone:</strong> ${order.customer.phone}</p>
+                        <p><strong>Address:</strong> ${order.customer.address}</p>
+                        <p><strong>City:</strong> ${order.customer.city}</p>
+                        
+                        <div class="whatsapp-link" style="margin-top: 1rem;">
+                            <a href="https://wa.me/${order.customer.phone.replace('+', '')}?text=Hello%20${encodeURIComponent(order.customer.name)}%2C%20about%20your%20order%20%23${order.id.substring(0, 8)}" 
+                               target="_blank" 
+                               class="btn-primary" 
+                               style="display: inline-block; text-decoration: none;">
+                                📞 Contact via WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="order-product-info">
+                        <h4>Order Information</h4>
+                        <p><strong>Product:</strong> ${order.product.name}</p>
+                        <p><strong>Price:</strong> Rs. ${order.product.price}</p>
+                        <p><strong>Quantity:</strong> ${order.quantity || 1}</p>
+                        <p><strong>Subtotal:</strong> Rs. ${order.subtotal || order.product.price}</p>
+                        <p><strong>Delivery Fee:</strong> Rs. ${order.deliveryFee || 200}</p>
+                        <p><strong>Total:</strong> Rs. ${order.total}</p>
+                        <p><strong>Payment Method:</strong> ${order.paymentMethod === 'easypaisa' ? 'Easypaisa' : 'COD'}</p>
+                        ${order.transactionId ? `<p><strong>Transaction ID:</strong> ${order.transactionId}</p>` : ''}
+                        <p><strong>Order Date:</strong> ${orderDate}</p>
+                    </div>
+                </div>
+                
+                <div class="order-status-control">
+                    <label>Update Order Status:</label>
+                    <select id="order-status-select" onchange="saveOrderStatus('${order.id}')">
+                        <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
+                        <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                        <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Shipped</option>
+                        <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                        <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                    </select>
+                </div>
+                
+                <div style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 6px;">
+                    <strong>Current Status:</strong> 
+                    <span class="order-status status-${order.status || 'pending'}">
+                        ${(order.status || 'pending').charAt(0).toUpperCase() + (order.status || 'pending').slice(1)}
+                    </span>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        async function saveOrderStatus(orderId) {
+            const newStatus = document.getElementById('order-status-select').value;
+            
+            try {
+                await db.collection('orders').doc(orderId).update({
+                    status: newStatus,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                alert(`Order status updated to ${newStatus}`);
+                await loadOrders();
+                updateDashboardStats();
+                
+            } catch (error) {
+                console.error('Error updating order status:', error);
+                alert('Error updating order status. Please try again.');
+            }
+        }
+
+        function updateOrderStatus(orderId) {
+            viewOrderDetails(orderId);
+        }
+
+        function closeOrderModal() {
+            document.getElementById('order-modal').style.display = 'none';
+        }
+
+        // Filter and Search Functions
+        function filterOrders() {
+            const statusFilter = document.getElementById('status-filter').value;
+            
+            let filteredOrders = orders;
+            if (statusFilter !== 'all') {
+                filteredOrders = orders.filter(order => order.status === statusFilter);
+            }
+            
+            displayOrders(filteredOrders);
+        }
+
+        function searchOrders() {
+            const searchTerm = document.getElementById('search-orders').value.toLowerCase();
+            
+            const filteredOrders = orders.filter(order => 
+                order.customer.name.toLowerCase().includes(searchTerm) ||
+                order.customer.phone.includes(searchTerm) ||
+                order.product.name.toLowerCase().includes(searchTerm)
+            );
+            
+            displayOrders(filteredOrders);
+        }
+
+        // Modal Management
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').style.display = 'none';
+            pendingAction = null;
+        }
+
+        // Utility Functions
+        function showLoading(elementId, message = 'Loading...') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = `
+                    <tr>
+                        <td colspan="${elementId.includes('orders') ? 9 : 6}" class="loading">
+                            <div class="loading-spinner"></div>
+                            <p>${message}</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = `
+                    <tr>
+                        <td colspan="${elementId.includes('orders') ? 9 : 6}" class="empty-state">
+                            <p>${message}</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Close modals when clicking outside
+            document.addEventListener('click', function(event) {
+                if (event.target.classList.contains('modal-overlay')) {
+                    closeProductModal();
+                    closeOrderModal();
+                    closeConfirmModal();
+                }
+            });
+            
+            // Escape key to close modals
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeProductModal();
+                    closeOrderModal();
+                    closeConfirmModal();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
